@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from "react";
+import { loadProfile, clearProfile, formatProfileForPrompt } from "./memory/userProfile";
+import { extractAndUpdateProfile } from "./memory/entityExtractor";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { runOrchestrator } from "./agents/orchestrator";
 import "./App.css";
@@ -126,7 +128,9 @@ const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
 
 const WELCOME = "👋 Hey Gossaye! I'm your AI Agent. I have 3 tools: 🧮 Calculator, 🔍 Web Search, and 🐙 GitHub PR. What can I help you with?";
 
-async function runAgent(userMessage, history, onToolCall) {
+async function runAgent(userMessage, history, onToolCall, profile) {
+  const profileContext = formatProfileForPrompt(profile);
+
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
     tools,
@@ -134,7 +138,7 @@ async function runAgent(userMessage, history, onToolCall) {
 1. search_web — facts, news, general knowledge
 2. calculate — any math or number problems
 3. github_pr — GitHub Pull Request actions (create, list, review)
-Always use the right tool. Be concise and friendly.`
+Always use the right tool. Be concise and friendly.${profileContext}`
   });
 
   const chat = model.startChat({ history });
@@ -190,6 +194,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [toolStatus, setToolStatus] = useState("");
   const bottomRef = useRef(null);
+  const [userProfile, setUserProfile] = useState(() => loadProfile());
 
   // ── Auto scroll ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -197,12 +202,14 @@ export default function App() {
   }, [messages, toolStatus]);
 
   // ── Fix 2: clearChat defined once, in the right place ───────────────────
-  function clearChat() {
-    setMessages([{ role: "bot", text: WELCOME }]);
-    setHistory([]);
-    localStorage.removeItem('gossaye-agent-history');
-    localStorage.removeItem('gossaye-agent-messages');
-  }
+ function clearChat() {
+  setMessages([{ role: "bot", text: WELCOME }]);
+  setHistory([]);
+  localStorage.removeItem('gossaye-agent-history');
+  localStorage.removeItem('gossaye-agent-messages');
+  // Note: we DON'T clear profile on chat clear
+  // Profile is permanent — only cleared by the ✕ button
+}
 
   // ── Fix 3: sendMessage with no duplicate setMessages ────────────────────
   async function sendMessage() {
@@ -224,12 +231,12 @@ export default function App() {
 
   // If orchestrator handled it use that answer
   // Otherwise fall through to regular agent
-  const answer = orchestratorAnswer || await runAgent(
-    userText,
-    history,
-    (toolName) => setToolStatus(TOOL_LABELS[toolName] || "🤖 Thinking...")
-  );
-
+ const answer = orchestratorAnswer || await runAgent(
+  userText,
+  history,
+  (toolName) => setToolStatus(TOOL_LABELS[toolName] || "🤖 Thinking..."),
+  userProfile  // ← pass profile
+);
   // Save history with sliding window
   setHistory(prev => {
     const updated = [
@@ -241,7 +248,14 @@ export default function App() {
     localStorage.setItem('gossaye-agent-history', JSON.stringify(trimmed));
     return trimmed;
   });
-
+     // Extract and update user profile in background
+// Don't await — runs silently without slowing down response
+extractAndUpdateProfile(userText, answer).then(updatedProfile => {
+  if (updatedProfile) {
+    setUserProfile(updatedProfile);
+    console.log('🧠 Profile updated with new facts');
+  }
+});
   // Save messages
   setMessages(prev => {
     const updated = [...prev, { role: "bot", text: answer }];
@@ -288,6 +302,21 @@ export default function App() {
           🗑️ Clear
         </button>
       </div>
+       
+       {/* Profile Panel */}
+{(userProfile.name || userProfile.job || userProfile.location) && (
+  <div className="profile-bar">
+    <span>🧠 Known: </span>
+    {userProfile.name && <span className="profile-tag">👤 {userProfile.name}</span>}
+    {userProfile.job && <span className="profile-tag">💼 {userProfile.job}</span>}
+    {userProfile.location && <span className="profile-tag">📍 {userProfile.location}</span>}
+    {userProfile.company && <span className="profile-tag">🏢 {userProfile.company}</span>}
+    <button className="profile-clear" onClick={() => {
+      clearProfile();
+      setUserProfile(loadProfile());
+    }}>✕</button>
+  </div>
+)}
 
       {/* Messages */}
       <div className="messages">
