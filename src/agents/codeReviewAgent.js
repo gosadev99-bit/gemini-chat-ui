@@ -48,7 +48,13 @@ export async function runCodeReviewAgent(userMessage, onUpdate) {
   // ── AGENT 1: Fetcher Agent ───────────────────────────────────────────────
   onUpdate(`📥 Fetcher Agent loading PR #${prNumber}...`);
 
-  const { pr, files } = await fetchPRFiles(prNumber);
+  let prData;
+  try {
+    prData = await fetchPRFiles(prNumber);
+  } catch (err) {
+    return `❌ PR #${prNumber} not found. Make sure the PR exists in your repo and try again.`;
+  }
+  const { pr, files } = prData;
 
   const filesSummary = files.map(f =>
     `File: ${f.filename}\nChanges: +${f.additions} -${f.deletions}\nPatch:\n${f.patch?.slice(0, 500) || 'No patch available'}`
