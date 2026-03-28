@@ -192,3 +192,21 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
+.clear-btn {
+  background: transparent;
+  border: 1px solid #334155;
+  color: #64748b;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-btn:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  transform: none;
+}

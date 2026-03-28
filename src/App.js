@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { runOrchestrator } from "./agents/orchestrator";
 import "./App.css";
 
 // ── TOOL DEFINITIONS ──────────────────────────────────────────────────────
@@ -58,11 +59,9 @@ async function search_web({ query }) {
       data.Answer ||
       data.RelatedTopics?.[0]?.Text;
 
-    // If DuckDuckGo finds nothing, tell Gemini to answer from its own knowledge
     if (!answer) {
       return { result: `No live search result found. Please answer "${query}" using your own training knowledge.` };
     }
-
     return { result: answer };
   } catch {
     return { result: `Search failed. Please answer "${query}" using your own training knowledge.` };
@@ -90,7 +89,6 @@ async function github_pr({ action, title, head, base, body, pr_number }) {
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
   };
-
   try {
     if (action === "create") {
       const res = await fetch(`${BASE_URL}/pulls`, {
@@ -126,6 +124,8 @@ const toolHandlers = { search_web, calculate, github_pr };
 // ── GEMINI AGENT ───────────────────────────────────────────────────────────
 const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
 
+const WELCOME = "👋 Hey Gossaye! I'm your AI Agent. I have 3 tools: 🧮 Calculator, 🔍 Web Search, and 🐙 GitHub PR. What can I help you with?";
+
 async function runAgent(userMessage, history, onToolCall) {
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
@@ -145,10 +145,7 @@ Always use the right tool. Be concise and friendly.`
   while (content.parts.some(p => p.functionCall)) {
     const toolCallPart = content.parts.find(p => p.functionCall);
     const { name, args } = toolCallPart.functionCall;
-
-    // Tell UI which tool is being called
-    onToolCall(name, args);
-
+    onToolCall(name);
     const toolResult = await toolHandlers[name](args);
     response = await chat.sendMessage([{
       functionResponse: { name, response: toolResult }
@@ -160,28 +157,54 @@ Always use the right tool. Be concise and friendly.`
   return response.response.text();
 }
 
-// ── CHAT UI ────────────────────────────────────────────────────────────────
+// ── CONSTANTS ──────────────────────────────────────────────────────────────
 const TOOL_LABELS = {
   search_web: "🔍 Searching web...",
   calculate: "🧮 Calculating...",
   github_pr: "🐙 Calling GitHub..."
 };
 
+// ── COMPONENT ──────────────────────────────────────────────────────────────
 export default function App() {
-  const [messages, setMessages] = useState([
-    { role: "bot", text: "👋 Hey Gossaye! I'm your AI Agent. I have 3 tools: 🧮 Calculator, 🔍 Web Search, and 🐙 GitHub PR. What can I help you with?" }
-  ]);
+
+  // ── Fix 1: Each useState declared exactly ONCE ──────────────────────────
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gossaye-agent-messages');
+      return saved ? JSON.parse(saved) : [{ role: "bot", text: WELCOME }];
+    } catch {
+      return [{ role: "bot", text: WELCOME }];
+    }
+  });
+
+  const [history, setHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gossaye-agent-history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [toolStatus, setToolStatus] = useState("");
-  const [history, setHistory] = useState([]);
   const bottomRef = useRef(null);
 
-  // Auto scroll to bottom
+  // ── Auto scroll ──────────────────────────────────────────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, toolStatus]);
 
+  // ── Fix 2: clearChat defined once, in the right place ───────────────────
+  function clearChat() {
+    setMessages([{ role: "bot", text: WELCOME }]);
+    setHistory([]);
+    localStorage.removeItem('gossaye-agent-history');
+    localStorage.removeItem('gossaye-agent-messages');
+  }
+
+  // ── Fix 3: sendMessage with no duplicate setMessages ────────────────────
   async function sendMessage() {
     if (!input.trim() || loading) return;
 
@@ -190,25 +213,45 @@ export default function App() {
     setLoading(true);
     setToolStatus("");
 
-    // Add user message
     setMessages(prev => [...prev, { role: "user", text: userText }]);
 
-    try {
-      const answer = await runAgent(
-        userText,
-        history,
-        (toolName) => setToolStatus(TOOL_LABELS[toolName] || "🤖 Thinking...")
-      );
+   try {
+  // First check if orchestrator should handle it
+  const orchestratorAnswer = await runOrchestrator(
+    userText,
+    (status) => setToolStatus(status)
+  );
 
-      // Save to history
-      setHistory(prev => [
-        ...prev,
-        { role: "user", parts: [{ text: userText }] },
-        { role: "model", parts: [{ text: answer }] }
-      ]);
+  // If orchestrator handled it use that answer
+  // Otherwise fall through to regular agent
+  const answer = orchestratorAnswer || await runAgent(
+    userText,
+    history,
+    (toolName) => setToolStatus(TOOL_LABELS[toolName] || "🤖 Thinking...")
+  );
 
-      setMessages(prev => [...prev, { role: "bot", text: answer }]);
-    } catch (err) {
+  // Save history with sliding window
+  setHistory(prev => {
+    const updated = [
+      ...prev,
+      { role: "user", parts: [{ text: userText }] },
+      { role: "model", parts: [{ text: answer }] }
+    ];
+    const trimmed = updated.length > 20 ? updated.slice(-20) : updated;
+    localStorage.setItem('gossaye-agent-history', JSON.stringify(trimmed));
+    return trimmed;
+  });
+
+  // Save messages
+  setMessages(prev => {
+    const updated = [...prev, { role: "bot", text: answer }];
+    const trimmed = updated.length > 50 ? updated.slice(-50) : updated;
+    localStorage.setItem('gossaye-agent-messages', JSON.stringify(trimmed));
+    return trimmed;
+  });
+
+}
+   catch (err) {
       setMessages(prev => [...prev, {
         role: "bot",
         text: err.message?.includes("429")
@@ -228,17 +271,22 @@ export default function App() {
     }
   }
 
+  // ── Fix 4: Correct JSX structure with app wrapper ────────────────────────
   return (
     <div className="app">
+
       {/* Header */}
       <div className="header">
         <div className="header-avatar">G</div>
-        <div>
+        <div style={{ flex: 1 }}>
           <h1>Gossaye AI Agent</h1>
           <span className={loading ? "status busy" : "status online"}>
             {loading ? "Thinking..." : "Online"}
           </span>
         </div>
+        <button className="clear-btn" onClick={clearChat}>
+          🗑️ Clear
+        </button>
       </div>
 
       {/* Messages */}
@@ -251,7 +299,6 @@ export default function App() {
           </div>
         ))}
 
-        {/* Tool status indicator */}
         {toolStatus && (
           <div className="message bot">
             <div className="avatar">🤖</div>
@@ -259,7 +306,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Loading dots */}
         {loading && !toolStatus && (
           <div className="message bot">
             <div className="avatar">🤖</div>
@@ -285,6 +331,7 @@ export default function App() {
           {loading ? "..." : "Send"}
         </button>
       </div>
+
     </div>
   );
 }
