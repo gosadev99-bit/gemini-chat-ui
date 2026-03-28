@@ -16,19 +16,20 @@ async function fetchPRFiles(prNumber) {
     "X-GitHub-Api-Version": "2022-11-28",
   };
 
-  try {
-    const [prRes, filesRes] = await Promise.all([
-      fetch(`${BASE_URL}/pulls/${prNumber}`, { headers }),
-      fetch(`${BASE_URL}/pulls/${prNumber}/files`, { headers })
-    ]);
+  const [prRes, filesRes] = await Promise.all([
+    fetch(`${BASE_URL}/pulls/${prNumber}`, { headers }),
+    fetch(`${BASE_URL}/pulls/${prNumber}/files`, { headers })
+  ]);
 
-    const pr = await prRes.json();
-    const files = await filesRes.json();
-
-    return { pr, files };
-  } catch (err) {
-    throw new Error(`GitHub fetch failed: ${err.message}`);
+  // ← THIS IS THE KEY FIX: check status before parsing
+  if (!prRes.ok) {
+    throw new Error(`PR #${prNumber} not found (status: ${prRes.status})`);
   }
+
+  const pr = await prRes.json();
+  const files = await filesRes.json();
+
+  return { pr, files };
 }
 
 export async function runCodeReviewAgent(userMessage, onUpdate) {
