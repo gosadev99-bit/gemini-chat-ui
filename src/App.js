@@ -6,8 +6,8 @@ import { runOrchestrator } from "./agents/orchestrator";
 import "./App.css";
 
 // Switch between direct Gemini (false) or Node.js backend (true)
-const USE_BACKEND = true; // ← change to true when backend is deployed
-const BACKEND_URL ='https://gossaye-agent-api.railway.app' // ← server
+const USE_BACKEND = true;
+const BACKEND_URL = 'https://gossaye-agent-api.railway.app';
 
 // ── TOOL DEFINITIONS ──────────────────────────────────────────────────────
 const tools = [{
