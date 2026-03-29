@@ -5,6 +5,10 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { runOrchestrator } from "./agents/orchestrator";
 import "./App.css";
 
+// Switch between direct Gemini (false) or Node.js backend (true)
+const USE_BACKEND = true; // ← change to true when backend is deployed
+const BACKEND_URL ='https://gossaye-agent-api.railway.app' // ← server
+
 // ── TOOL DEFINITIONS ──────────────────────────────────────────────────────
 const tools = [{
   functionDeclarations: [
@@ -168,6 +172,19 @@ const TOOL_LABELS = {
   github_pr: "🐙 Calling GitHub..."
 };
 
+// ── BACKEND AGENT CALL ────────────────────────────────────────────────────
+async function callBackend(userMessage, sessionId = 'react-ui') {
+  const res = await fetch(`${BACKEND_URL}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: userMessage, sessionId })
+  });
+  if (!res.ok) throw new Error(`Server error: ${res.status}`);
+  const data = await res.json();
+  return data.answer;
+}
+
+
 // ── COMPONENT ──────────────────────────────────────────────────────────────
 export default function App() {
 
@@ -231,11 +248,15 @@ export default function App() {
 
   // If orchestrator handled it use that answer
   // Otherwise fall through to regular agent
- const answer = orchestratorAnswer || await runAgent(
-  userText,
-  history,
-  (toolName) => setToolStatus(TOOL_LABELS[toolName] || "🤖 Thinking..."),
-  userProfile  // ← pass profile
+const answer = orchestratorAnswer || (
+  USE_BACKEND
+    ? await callBackend(userText)
+    : await runAgent(
+        userText,
+        history,
+        (toolName) => setToolStatus(TOOL_LABELS[toolName] || "🤖 Thinking..."),
+        userProfile
+      )
 );
   // Save history with sliding window
   setHistory(prev => {
