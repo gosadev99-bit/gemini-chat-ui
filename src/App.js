@@ -7,7 +7,7 @@ import "./App.css";
 
 // Switch between direct Gemini (false) or Node.js backend (true)
 const USE_BACKEND = true;
-const BACKEND_URL = 'https://gossaye-agent-api.railway.app';
+const BACKEND_URL = 'http://93.188.166.34:3001';
 
 // ── TOOL DEFINITIONS ──────────────────────────────────────────────────────
 const tools = [{
