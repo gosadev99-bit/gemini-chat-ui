@@ -55,17 +55,17 @@ User sends message
       ↓
       
 Gemini reads the question
-
       ↓
+       
 Gemini decides which tool to use
-
       ↓
+      
 Tool runs in the browser
-
       ↓
+      
 Result sent back to Gemini
-
       ↓
+      
 Final answer displayed in chat
 
 
