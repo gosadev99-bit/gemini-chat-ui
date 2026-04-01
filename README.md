@@ -1,6 +1,6 @@
  # 🤖 Gossaye AI Agent — React Chat UI
 
-A production-grade AI agent chat interface built with React and Google Gemini API.
+Full-stack AI agent chat UI built with React — multi-agent system with sales automation, code review, persistent memory, and RAG user profiling — powered by Google Gemini
 
 Live demo: https://agent.gosanotary.tech
 
