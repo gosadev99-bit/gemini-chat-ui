@@ -1,7 +1,7 @@
  # 🤖 Gossaye AI Agent — React Chat UI
 
 A production-grade AI agent chat interface built with React and Google Gemini API.
-Live demo: https://gossaye-ai-agent.netlify.app
+Live demo: https://agent.gosanotary.tech
 
 ## 🚀 Features
 
@@ -74,5 +74,5 @@ Bot: 📋 Open PRs (1): #1 — add persistent memory...
 
 ## 👨‍💻 Author
 
-Gossaye Bireda — Front End Developer learning AI Agent Engineering
+Gossaye Bireda — Front End Developer/AI Agent Engineer. 
 GitHub: https://github.com/gosadev99-bit
