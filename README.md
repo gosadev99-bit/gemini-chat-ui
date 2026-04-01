@@ -24,7 +24,7 @@ Live demo: https://agent.gosanotary.tech
 
 ### 1. Clone the repo
 git clone https://github.com/gosadev99-bit/gemini-chat-ui.git
-cd gemini-chat-ui
+
 
 ### 2. Install dependencies
 npm install
@@ -74,6 +74,6 @@ Bot: 📋 Open PRs (1): #1 — add persistent memory...
 
 ## 👨‍💻 Author
 
-Gossaye Bireda — Front End Developer/AI Agent Engineer. 
+Gossaye Bireda —Full stack Developer/AI Agent Engineer. 
 
 GitHub: https://github.com/gosadev99-bit
