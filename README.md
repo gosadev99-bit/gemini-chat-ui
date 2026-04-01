@@ -18,7 +18,7 @@ Live demo: https://agent.gosanotary.tech
 - Google Gemini API (gemini-2.5-flash)
 - DuckDuckGo Instant Answer API
 - GitHub REST API
-- Netlify (deployment)
+- VPS (deployment)
 
 ## ⚙️ Setup
 
@@ -75,4 +75,5 @@ Bot: 📋 Open PRs (1): #1 — add persistent memory...
 ## 👨‍💻 Author
 
 Gossaye Bireda — Front End Developer/AI Agent Engineer. 
+
 GitHub: https://github.com/gosadev99-bit
