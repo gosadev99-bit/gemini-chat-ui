@@ -1,6 +1,7 @@
  # 🤖 Gossaye AI Agent — React Chat UI
 
 A production-grade AI agent chat interface built with React and Google Gemini API.
+
 Live demo: https://agent.gosanotary.tech
 
 ## 🚀 Features
@@ -78,18 +79,21 @@ Final answer displayed in chat
 
 **Math:**
 You: What is 18% tip on $120?
+
 Bot: An 18% tip on $120 is $21.60.
 
 **Search:**
 You: Who founded Google?
+
 Bot: Larry Page and Sergey Brin founded Google.
 
 **GitHub:**
 You: List open PRs
+
 Bot: 📋 Open PRs (1): #1 — add persistent memory...
 
 ## 👨‍💻 Author
 
-Gossaye Bireda —Full stack Developer/AI Agent Engineer. 
+Gossaye Bireda — Full stack Developer/AI Agent Engineer. 
 
 GitHub: https://github.com/gosadev99-bit
