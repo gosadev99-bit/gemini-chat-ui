@@ -30,12 +30,17 @@ git clone https://github.com/gosadev99-bit/gemini-chat-ui.git
 npm install
 
 ### 3. Create your .env file
+
 cp .env.example .env
 
 Fill in your keys:
+
 REACT_APP_GEMINI_API_KEY=your_gemini_key
+
 REACT_APP_GITHUB_TOKEN=your_github_token
+
 REACT_APP_GITHUB_USERNAME=your_github_username
+
 REACT_APP_GITHUB_REPO=your_repo_name
 
 ### 4. Run locally
