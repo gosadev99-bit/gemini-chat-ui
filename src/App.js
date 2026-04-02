@@ -387,16 +387,6 @@ export default function App() {
       </div>
        
        {/* Profile Panel */}
-    {/* Cost tracker */}
-{lastCost && (
-  <div className="cost-bar">
-    <span>Last request:</span>
-    <span className="cost-tag">📥 {lastCost.inputTokens} in</span>
-    <span className="cost-tag">📤 {lastCost.outputTokens} out</span>
-    <span className="cost-tag">💰 {lastCost.estimatedCost}</span>
-    <button className="profile-clear" onClick={() => setLastCost(null)}>✕</button>
-  </div>
-)}
 {(userProfile.name || userProfile.job || userProfile.location) && (
   <div className="profile-bar">
     <span>🧠 Known: </span>
@@ -408,6 +398,17 @@ export default function App() {
       clearProfile();
       setUserProfile(loadProfile());
     }}>✕</button>
+  </div>
+)}
+
+    {/* Cost tracker */}
+{lastCost && (
+  <div className="cost-bar">
+    <span>Last request:</span>
+    <span className="cost-tag">📥 {lastCost.inputTokens} in</span>
+    <span className="cost-tag">📤 {lastCost.outputTokens} out</span>
+    <span className="cost-tag">💰 {lastCost.estimatedCost}</span>
+    <button className="profile-clear" onClick={() => setLastCost(null)}>✕</button>
   </div>
 )}
 
