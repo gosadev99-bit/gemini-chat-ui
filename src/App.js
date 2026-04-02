@@ -183,6 +183,38 @@ async function callBackend(userMessage, sessionId = 'react-ui') {
   return data.answer;
 }
 
+// ── STREAMING BACKEND CALL ─────────────────────────────────────────────────
+async function callBackendStream(userMessage, sessionId = 'react-ui', onChunk, onTool, onDone) {
+  const res = await fetch(`${BACKEND_URL}/api/chat/stream`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: userMessage, sessionId })
+  });
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const text = decoder.decode(value);
+    const lines = text.split('\n').filter(l => l.startsWith('data: '));
+
+    for (const line of lines) {
+      try {
+        const data = JSON.parse(line.replace('data: ', ''));
+
+        if (data.type === 'chunk') onChunk(data.text);
+        if (data.type === 'tool')  onTool(data.tool);
+        if (data.type === 'done')  onDone(data);
+        if (data.type === 'error') throw new Error(data.message);
+      } catch (e) {
+        // skip malformed chunks
+      }
+    }
+  }
+}
 
 // ── COMPONENT ──────────────────────────────────────────────────────────────
 export default function App() {
@@ -211,6 +243,9 @@ export default function App() {
   const [toolStatus, setToolStatus] = useState("");
   const bottomRef = useRef(null);
   const [userProfile, setUserProfile] = useState(() => loadProfile());
+  const [streamingText, setStreamingText] = useState('');
+  const [isStreaming, setIsStreaming]     = useState(false);
+  const [lastCost, setLastCost]           = useState(null);
 
   // ── Auto scroll ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -228,75 +263,103 @@ export default function App() {
 }
 
   // ── Fix 3: sendMessage with no duplicate setMessages ────────────────────
-  async function sendMessage() {
-    if (!input.trim() || loading) return;
+ async function sendMessage() {
+  if (!input.trim() || loading) return;
 
-    const userText = input.trim();
-    setInput("");
-    setLoading(true);
-    setToolStatus("");
+  const userText = input.trim();
+  setInput('');
+  setLoading(true);
+  setStreamingText('');
+  setToolStatus('');
 
-    setMessages(prev => [...prev, { role: "user", text: userText }]);
+  setMessages(prev => [...prev, { role: 'user', text: userText }]);
 
-   try {
-  // First check if orchestrator should handle it
-  const orchestratorAnswer = await runOrchestrator(
-    userText,
-    (status) => setToolStatus(status)
-  );
+  try {
+    // Check orchestrator first
+    const orchestratorAnswer = await runOrchestrator(
+      userText,
+      (status) => setToolStatus(status)
+    );
 
-  // If orchestrator handled it use that answer
-  // Otherwise fall through to regular agent
-const answer = orchestratorAnswer || (
-  USE_BACKEND
-    ? await callBackend(userText)
-    : await runAgent(
+    if (orchestratorAnswer) {
+      // Orchestrator handled it — no streaming for multi-agent
+      setMessages(prev => {
+        const updated = [...prev, { role: 'bot', text: orchestratorAnswer }];
+        const trimmed = updated.length > 50 ? updated.slice(-50) : updated;
+        localStorage.setItem('gossaye-agent-messages', JSON.stringify(trimmed));
+        return trimmed;
+      });
+      setHistory(prev => {
+        const updated = [
+          ...prev,
+          { role: 'user',  parts: [{ text: userText }] },
+          { role: 'model', parts: [{ text: orchestratorAnswer }] }
+        ];
+        const trimmed = updated.length > 20 ? updated.slice(-20) : updated;
+        localStorage.setItem('gossaye-agent-history', JSON.stringify(trimmed));
+        return trimmed;
+      });
+    } else if (USE_BACKEND) {
+      // ── STREAMING MODE ──────────────────────────────────────────────────
+      setIsStreaming(true);
+      let fullAnswer = '';
+
+      await callBackendStream(
         userText,
-        history,
-        (toolName) => setToolStatus(TOOL_LABELS[toolName] || "🤖 Thinking..."),
+        'react-ui',
+        // onChunk — append each word
+        (chunk) => {
+          fullAnswer += chunk;
+          setStreamingText(fullAnswer);
+        },
+        // onTool — show tool status
+        (toolName) => setToolStatus(TOOL_LABELS[toolName] || '🤖 Thinking...'),
+        // onDone — finalize
+        (data) => {
+          setLastCost(data.usage);
+          setIsStreaming(false);
+          setStreamingText('');
+          setMessages(prev => {
+            const updated = [...prev, { role: 'bot', text: data.fullAnswer }];
+            const trimmed = updated.length > 50 ? updated.slice(-50) : updated;
+            localStorage.setItem('gossaye-agent-messages', JSON.stringify(trimmed));
+            return trimmed;
+          });
+          // Extract profile in background
+          extractAndUpdateProfile(userText, data.fullAnswer).then(updated => {
+            if (updated) setUserProfile(updated);
+          });
+        }
+      );
+    } else {
+      // Direct Gemini (dev mode)
+      const answer = await runAgent(
+        userText, history,
+        (toolName) => setToolStatus(TOOL_LABELS[toolName] || '🤖 Thinking...'),
         userProfile
-      )
-);
-  // Save history with sliding window
-  setHistory(prev => {
-    const updated = [
-      ...prev,
-      { role: "user", parts: [{ text: userText }] },
-      { role: "model", parts: [{ text: answer }] }
-    ];
-    const trimmed = updated.length > 20 ? updated.slice(-20) : updated;
-    localStorage.setItem('gossaye-agent-history', JSON.stringify(trimmed));
-    return trimmed;
-  });
-     // Extract and update user profile in background
-// Don't await — runs silently without slowing down response
-extractAndUpdateProfile(userText, answer).then(updatedProfile => {
-  if (updatedProfile) {
-    setUserProfile(updatedProfile);
-    console.log('🧠 Profile updated with new facts');
-  }
-});
-  // Save messages
-  setMessages(prev => {
-    const updated = [...prev, { role: "bot", text: answer }];
-    const trimmed = updated.length > 50 ? updated.slice(-50) : updated;
-    localStorage.setItem('gossaye-agent-messages', JSON.stringify(trimmed));
-    return trimmed;
-  });
-
-}
-   catch (err) {
-      setMessages(prev => [...prev, {
-        role: "bot",
-        text: err.message?.includes("429")
-          ? "⏳ Too many requests! Wait 15 seconds and try again."
-          : "❌ Something went wrong. Try again."
-      }]);
+      );
+      setMessages(prev => {
+        const updated = [...prev, { role: 'bot', text: answer }];
+        const trimmed = updated.length > 50 ? updated.slice(-50) : updated;
+        localStorage.setItem('gossaye-agent-messages', JSON.stringify(trimmed));
+        return trimmed;
+      });
     }
 
-    setToolStatus("");
-    setLoading(false);
+  } catch (err) {
+    setIsStreaming(false);
+    setStreamingText('');
+    setMessages(prev => [...prev, {
+      role: 'bot',
+      text: err.message?.includes('429')
+        ? '⏳ Too many requests! Wait 15 seconds and try again.'
+        : '❌ Something went wrong. Try again.'
+    }]);
   }
+
+  setToolStatus('');
+  setLoading(false);
+}
 
   function handleKey(e) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -324,6 +387,16 @@ extractAndUpdateProfile(userText, answer).then(updatedProfile => {
       </div>
        
        {/* Profile Panel */}
+    {/* Cost tracker */}
+{lastCost && (
+  <div className="cost-bar">
+    <span>Last request:</span>
+    <span className="cost-tag">📥 {lastCost.inputTokens} in</span>
+    <span className="cost-tag">📤 {lastCost.outputTokens} out</span>
+    <span className="cost-tag">💰 {lastCost.estimatedCost}</span>
+    <button className="profile-clear" onClick={() => setLastCost(null)}>✕</button>
+  </div>
+)}
 {(userProfile.name || userProfile.job || userProfile.location) && (
   <div className="profile-bar">
     <span>🧠 Known: </span>
@@ -339,6 +412,16 @@ extractAndUpdateProfile(userText, answer).then(updatedProfile => {
 )}
 
       {/* Messages */}
+{/* Streaming bubble — shows while response is coming in */}
+{isStreaming && streamingText && (
+  <div className="message bot">
+    <div className="avatar">🤖</div>
+    <div className="bubble streaming">
+      {streamingText}
+      <span className="cursor">▋</span>
+    </div>
+  </div>
+)} 
       <div className="messages">
         {messages.map((msg, i) => (
           <div key={i} className={`message ${msg.role}`}>
