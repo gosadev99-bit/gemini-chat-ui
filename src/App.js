@@ -412,25 +412,26 @@ export default function App() {
   </div>
 )}
 
-      {/* Messages */}
-{/* Streaming bubble — shows while response is coming in */}
-{isStreaming && streamingText && (
-  <div className="message bot">
-    <div className="avatar">🤖</div>
-    <div className="bubble streaming">
-      {streamingText}
-      <span className="cursor">▋</span>
+     {/* Messages */}
+<div className="messages">
+  {messages.map((msg, i) => (
+    <div key={i} className={`message ${msg.role}`}>
+      {msg.role === "bot" && <div className="avatar">🤖</div>}
+      <div className="bubble">{msg.text}</div>
+      {msg.role === "user" && <div className="avatar">👤</div>}
     </div>
-  </div>
-)} 
-      <div className="messages">
-        {messages.map((msg, i) => (
-          <div key={i} className={`message ${msg.role}`}>
-            {msg.role === "bot" && <div className="avatar">🤖</div>}
-            <div className="bubble">{msg.text}</div>
-            {msg.role === "user" && <div className="avatar">👤</div>}
-          </div>
-        ))}
+  ))}
+
+  {/* Streaming bubble — INSIDE messages div ✅ */}
+  {isStreaming && streamingText && (
+    <div className="message bot">
+      <div className="avatar">🤖</div>
+      <div className="bubble streaming">
+        {streamingText}
+        <span className="cursor">▋</span>
+      </div>
+    </div>
+  )}
 
         {toolStatus && (
           <div className="message bot">
