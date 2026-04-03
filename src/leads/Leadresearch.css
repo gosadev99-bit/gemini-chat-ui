@@ -1,0 +1,334 @@
+.lead-page {
+  min-height: 100vh;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Header */
+.lead-header {
+  background: #1e293b;
+  padding: 20px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #334155;
+}
+
+.lead-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 4px;
+}
+
+.lead-header p {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.back-btn {
+  text-decoration: none;
+  color: #94a3b8;
+  font-size: 13px;
+  padding: 8px 16px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+/* Search */
+.lead-search {
+  padding: 32px 40px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.search-box {
+  display: flex;
+  gap: 12px;
+}
+
+.search-box input {
+  flex: 1;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 14px 20px;
+  color: #f1f5f9;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-box input:focus { border-color: #3b82f6; }
+.search-box input::placeholder { color: #475569; }
+
+.search-box button {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.search-box button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Pipeline status */
+.pipeline-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+  font-size: 14px;
+  color: #93c5fd;
+}
+
+.status-dot {
+  width: 8px; height: 8px;
+  background: #3b82f6;
+  border-radius: 50%;
+  animation: pulse 1s infinite;
+  flex-shrink: 0;
+}
+
+/* Content layout */
+.lead-content {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 24px;
+  padding: 0 40px 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Score card */
+.score-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 28px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.score-circle {
+  width: 90px; height: 90px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  flex-direction: column;
+}
+
+.score-num {
+  font-size: 32px;
+  font-weight: 900;
+  color: white;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+}
+
+.score-info h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 8px;
+}
+
+.tier-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 8px;
+}
+
+.score-time {
+  font-size: 12px;
+  color: #475569;
+}
+
+/* Tabs */
+.report-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tab-btn {
+  background: transparent;
+  border: 1px solid #334155;
+  color: #64748b;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  transform: none;
+  box-shadow: none;
+}
+
+.tab-btn:hover { color: #94a3b8; border-color: #475569; transform: none; }
+.tab-btn.active {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border-color: transparent;
+  color: white;
+  transform: none;
+}
+
+/* Tab content */
+.tab-content {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.report-section h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #3b82f6;
+  margin-bottom: 8px;
+  margin-top: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.report-section h3:first-child { margin-top: 0; }
+
+.report-section p {
+  font-size: 14px;
+  color: #94a3b8;
+  line-height: 1.8;
+}
+
+.score-text {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #94a3b8;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  background: #0f172a;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.email-box {
+  background: #0f172a;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.email-box pre {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #94a3b8;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.copy-btn {
+  background: #334155;
+  color: #e2e8f0;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  transform: none;
+  box-shadow: none;
+}
+
+.copy-btn:hover { background: #475569; transform: none; }
+
+/* History sidebar */
+.lead-history {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 20px;
+  height: fit-content;
+}
+
+.lead-history h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 4px;
+}
+
+.history-item:hover { background: #334155; }
+
+.history-company {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+  flex: 1;
+}
+
+.history-tier {
+  font-size: 11px;
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+.history-score {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .lead-content { grid-template-columns: 1fr; }
+  .lead-header { padding: 16px 20px; }
+  .lead-search { padding: 20px; }
+  .lead-content { padding: 0 20px 20px; }
+  .search-box { flex-direction: column; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
