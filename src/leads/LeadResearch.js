@@ -167,21 +167,30 @@ async function runLoggerAgent(company, research, score, email, onUpdate) {
 }
 
 // ── MAIN PIPELINE ─────────────────────────────────────────────────────────
+const BACKEND_URL = 'https://api.gosanotary.tech';
+
 async function runLeadPipeline(company, onUpdate, onComplete) {
   try {
     onUpdate("🚀 Starting Lead Research Pipeline...");
+    onUpdate("🔍 Research Agent searching...");
 
-    const research = await runResearchAgent(company, onUpdate);
-    const score    = await runScorerAgent(company, research, onUpdate);
-    const email    = await runWriterAgent(company, research, score, onUpdate);
-    const report   = runLoggerAgent(company, research, score, email, onUpdate);
+    const res = await fetch(`${BACKEND_URL}/api/leads/research`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company })
+    });
 
-    onUpdate("✅ Pipeline complete!");
-    onComplete(report);
+    onUpdate("📊 Scorer Agent evaluating lead...");
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.error);
+
+    onUpdate("💾 Saving to Google Sheets...");
+    onComplete(data.report);
   } catch (err) {
     onUpdate(`❌ Error: ${err.message}`);
   }
-}
+}  
 
 // ── UI COMPONENT ──────────────────────────────────────────────────────────
 export default function LeadResearch() {
