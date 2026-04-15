@@ -115,23 +115,51 @@ async function runWriterAgent(company, research, score, onUpdate) {
 }
 
 // ── AGENT 4: LOGGER ───────────────────────────────────────────────────────
-function runLoggerAgent(company, research, score, email, onUpdate) {
-  onUpdate("💾 Saving lead report...");
+async function runLoggerAgent(company, research, score, email, onUpdate) {
+  onUpdate("💾 Saving to Google Sheets...");
+
+  // Parse score data
+  const scoreMatch  = score.match(/SCORE:\s*(\d+)/);
+  const tierMatch   = score.match(/TIER:\s*(\w+)/);
+  const budgetMatch = score.match(/BUDGET_ESTIMATE:\s*(.+)/);
+  const oppMatch    = score.match(/OPPORTUNITY:\s*(.+)/);
+  const subjMatch   = email.match(/SUBJECT:\s*(.+)/);
+
+  // Log to Google Sheets
+  try {
+    await fetch('https://api.gosanotary.tech/api/leads/log-sheet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        company,
+        score:          scoreMatch  ? scoreMatch[1]  : 'N/A',
+        tier:           tierMatch   ? tierMatch[1]   : 'N/A',
+        budgetEstimate: budgetMatch ? budgetMatch[1].trim() : 'N/A',
+        opportunity:    oppMatch    ? oppMatch[1].trim()    : 'N/A',
+        emailSubject:   subjMatch   ? subjMatch[1].trim()  : 'N/A',
+        research:       research.summary || research,
+      })
+    });
+    onUpdate("✅ Logged to Google Sheets!");
+  } catch (err) {
+    console.error('Sheets log error:', err);
+    onUpdate("⚠️ Sheets log failed — saved locally");
+  }
+
+  // Also save to localStorage as backup
   const report = {
     company,
     timestamp: new Date().toISOString(),
-    research: research.summary,
-    news: research.news,
-    tech: research.tech,
-    funding: research.funding,
+    research: research.summary || research,
+    news: research.news || '',
+    tech: research.tech || '',
+    funding: research.funding || '',
     score,
     email,
   };
 
-  // Save to localStorage
   const existing = JSON.parse(localStorage.getItem('lead-reports') || '[]');
   existing.unshift(report);
-  // Keep last 20 reports
   if (existing.length > 20) existing.pop();
   localStorage.setItem('lead-reports', JSON.stringify(existing));
 
@@ -299,15 +327,44 @@ export default function LeadResearch() {
                   <div className="email-box">
                     <pre>{report.email}</pre>
                   </div>
-                  <button
-                    className="copy-btn"
-                    onClick={() => {
-                      navigator.clipboard.writeText(report.email);
-                      alert('Email copied to clipboard!');
-                    }}
-                  >
-                    📋 Copy Email
-                  </button>
+                <div style={{display:'flex', gap:'10px'}}>
+  <button
+    className="copy-btn"
+    onClick={() => {
+      navigator.clipboard.writeText(report.email);
+      alert('Email copied!');
+    }}
+  >
+    📋 Copy Email
+  </button>
+  <button
+    className="copy-btn"
+    style={{background:'#3b82f6', color:'white'}}
+    onClick={async () => {
+      const subjMatch = report.email.match(/SUBJECT:\s*(.+)/);
+      const subject   = subjMatch ? subjMatch[1].trim() : `Following up — ${report.company}`;
+      const body      = report.email.replace(/SUBJECT:.+\n/, '').trim();
+
+      const to = prompt('Send to email address:');
+      if (!to) return;
+
+      try {
+        const r = await fetch('https://api.gosanotary.tech/api/leads/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, subject, body, company: report.company })
+        });
+        const data = await r.json();
+        if (data.success) alert('✅ Email sent!');
+        else alert('❌ Error: ' + data.error);
+      } catch (err) {
+        alert('❌ Failed: ' + err.message);
+      }
+    }}
+  >
+    📧 Send Email
+  </button>
+</div>
                 </div>
               )}
             </div>
