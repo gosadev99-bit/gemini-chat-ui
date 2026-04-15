@@ -18,15 +18,42 @@ async function runLeadPipeline(company, onUpdate, onComplete) {
 
     onUpdate("📊 Scorer Agent evaluating lead...");
     const data = await res.json();
-
     if (!data.success) throw new Error(data.error);
 
-    onUpdate("💾 Saving to Google Sheets...");
+    // ── Log to Google Sheets ──────────────────────────────
+    onUpdate("💾 Logging to Google Sheets...");
+    try {
+      const scoreMatch  = data.report.score.match(/SCORE:\s*(\d+)/);
+      const tierMatch   = data.report.score.match(/TIER:\s*(\w+)/);
+      const budgetMatch = data.report.score.match(/BUDGET_ESTIMATE:\s*(.+)/);
+      const oppMatch    = data.report.score.match(/OPPORTUNITY:\s*(.+)/);
+      const subjMatch   = data.report.email.match(/SUBJECT:\s*(.+)/);
+
+      await fetch(`${BACKEND_URL}/api/leads/log-sheet`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company,
+          score:          scoreMatch  ? scoreMatch[1]         : 'N/A',
+          tier:           tierMatch   ? tierMatch[1]          : 'N/A',
+          budgetEstimate: budgetMatch ? budgetMatch[1].trim() : 'N/A',
+          opportunity:    oppMatch    ? oppMatch[1].trim()    : 'N/A',
+          emailSubject:   subjMatch   ? subjMatch[1].trim()   : 'N/A',
+          research:       data.report.research,
+        })
+      });
+      onUpdate("✅ Logged to Google Sheets!");
+    } catch (sheetErr) {
+      console.error('Sheets error:', sheetErr);
+      onUpdate("⚠️ Pipeline complete (Sheets log failed)");
+    }
+    // ─────────────────────────────────────────────────────
+
     onComplete(data.report);
   } catch (err) {
     onUpdate(`❌ Error: ${err.message}`);
   }
-}  
+}
 
 // ── UI COMPONENT ──────────────────────────────────────────────────────────
 export default function LeadResearch() {
