@@ -49,9 +49,10 @@ async function runLeadPipeline(company, onUpdate, onComplete) {
     }
     // ─────────────────────────────────────────────────────
 
-    onComplete(data.report);
+  onComplete(data.report);
   } catch (err) {
     onUpdate(`❌ Error: ${err.message}`);
+    onComplete(null);  // ← stop spinner even on error
   }
 }
 
@@ -75,11 +76,11 @@ export default function LeadResearch() {
     await runLeadPipeline(
       company.trim(),
       (msg) => setStatus(msg),
-      (result) => {
-        setReport(result);
-        setHistory(JSON.parse(localStorage.getItem('lead-reports') || '[]'));
-        setLoading(false);
-      }
+    (result) => {
+  if (result) setReport(result);  // ← only set if not null
+  setHistory(JSON.parse(localStorage.getItem('lead-reports') || '[]'));
+  setLoading(false);
+}
     );
   }
 
