@@ -13,9 +13,12 @@ const AGENT_STEPS = [
 async function runLeadPipeline(company, onStepUpdate, onComplete) {
   try {
     onStepUpdate('research', 'running');
-    const res = await fetch(`${BACKEND_URL}/api/leads/research`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+   const res = await fetch(`${BACKEND_URL}/api/leads/research`, {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'X-API-Key': 'gosa-react-ui-key-2026'
+  },
       body: JSON.stringify({ company })
     });
     onStepUpdate('research', 'done');
@@ -415,9 +418,12 @@ export default function LeadResearch() {
                         const to = prompt('Send to email address:');
                         if (!to) return;
                         try {
-                          const r = await fetch(`${BACKEND_URL}/api/leads/send-email`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                        const r = await fetch(`${BACKEND_URL}/api/leads/send-email`, {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'X-API-Key': 'gosa-react-ui-key-2026'
+  },
                             body: JSON.stringify({ to, subject, body, company: report.company })
                           });
                           const d = await r.json();

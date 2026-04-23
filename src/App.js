@@ -187,7 +187,10 @@ async function callBackend(userMessage, sessionId = 'react-ui') {
 async function callBackendStream(userMessage, sessionId = 'react-ui', onChunk, onTool, onDone) {
   const res = await fetch(`${BACKEND_URL}/api/chat/stream`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+  'Content-Type': 'application/json',
+  'X-API-Key': 'gosa-react-ui-key-2026'
+},
     body: JSON.stringify({ message: userMessage, sessionId })
   });
 
