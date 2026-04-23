@@ -17,7 +17,7 @@ async function runLeadPipeline(company, onStepUpdate, onComplete) {
   method: 'POST',
   headers: { 
     'Content-Type': 'application/json',
-    'X-API-Key': 'gosa-react-ui-key-2026'
+    'X-API-Key': process.env.REACT_APP_API_KEY 
   },
       body: JSON.stringify({ company })
     });
