@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import Dashboard from "./Dashboards";
 import "./LeadResearch.css";
 
 const BACKEND_URL = 'https://api.gosanotary.tech';
@@ -85,6 +86,7 @@ export default function LeadResearch() {
   const [toast, setToast]           = useState(null);
   const [favicon, setFavicon]       = useState(null);
   const inputRef                    = useRef(null);
+  const [pageTab, setPageTab] = useState('research');
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
@@ -275,6 +277,24 @@ export default function LeadResearch() {
       {/* MAIN CONTENT */}
       <div className="lrp-body">
 
+        {pageTab === 'research' ? (
+  // existing lrp-body div with report + sidebar
+  <div className="lrp-body">
+    ...existing content...
+  </div>
+) : (
+  <div style={{maxWidth:1200, margin:'0 auto', padding:'32px 40px 60px'}}>
+    <Dashboard
+      leads={history}
+      onSelectLead={(lead) => {
+        setReport(lead);
+        setActiveTab('research');
+        setPageTab('research');
+      }}
+    />
+  </div>
+)}
+
         {/* LEFT — Report */}
         <div className="lrp-report-col">
           {!report && !loading && (
@@ -362,18 +382,21 @@ export default function LeadResearch() {
                 </div>
               )}
 
-              {/* Tabs */}
-              <div className="lrp-tabs">
-                {['research', 'score', 'email'].map(tab => (
-                  <button key={tab}
-                    className={`lrp-tab ${activeTab === tab ? 'active' : ''}`}
-                    onClick={() => setActiveTab(tab)}
-                    style={activeTab === tab ? { borderColor: tierConf.color, color: tierConf.color } : {}}>
-                    {tab === 'research' ? '🔍 Research' :
-                     tab === 'score'    ? '📊 Full Score' : '📧 Email'}
-                  </button>
-                ))}
-              </div>
+             {/* Page tabs */}
+<div style={{display:'flex', gap:8, marginTop:16}}>
+  {['research','dashboard'].map(t => (
+    <button key={t} onClick={() => setPageTab(t)} style={{
+      padding:'8px 18px', borderRadius:8, border:'1.5px solid',
+      borderColor: pageTab===t ? '#3b82f6' : 'transparent',
+      background: pageTab===t ? 'rgba(59,130,246,0.12)' : 'transparent',
+      color: pageTab===t ? '#93c5fd' : '#475569',
+      fontSize:13, fontWeight:600, cursor:'pointer',
+      textTransform:'capitalize'
+    }}>
+      {t === 'research' ? '🔍 Research' : '📊 Dashboard'}
+    </button>
+  ))}
+</div>
 
               <div className="lrp-tab-content">
                 {activeTab === 'research' && (
