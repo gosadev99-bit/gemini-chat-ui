@@ -342,7 +342,11 @@ export default function App() {
         {messages.map((msg, i) => (
           <div key={i} className={`message ${msg.role}`}>
             <div className="avatar">{msg.role === 'bot' ? '🤖' : '👤'}</div>
-            <div className="bubble">{msg.text}</div>
+           <div className="bubble" dangerouslySetInnerHTML={{
+  __html: msg.text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br/>')
+}}/>
           </div>
         ))}
 
@@ -350,9 +354,11 @@ export default function App() {
         {isStreaming && streamingText && (
           <div className="message bot">
             <div className="avatar">🤖</div>
-            <div className="bubble streaming">
-              {streamingText}<span className="cursor">▋</span>
-            </div>
+           <div className="bubble streaming" dangerouslySetInnerHTML={{
+  __html: (streamingText + '▋')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br/>')
+}}/>
           </div>
         )}
 
